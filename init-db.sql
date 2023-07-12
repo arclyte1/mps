@@ -1,6 +1,6 @@
 CREATE TABLE match(
     id integer not null,
-    name varchar(50) not null,
+    name varchar not null,
     start_time timestamp not null,
     end_time timestamp not null,
     primary key(id)
@@ -21,7 +21,7 @@ CREATE TABLE event(
     id smallint not null,
     type eventtype not null,
     user_id integer,
-    deltatime smallint not null,
+    deltatime integer not null,
     primary key(match_id, id),
     foreign key(match_id) references match(id)
 );
@@ -50,7 +50,7 @@ CREATE TYPE teamtype AS ENUM (
 CREATE TABLE game(
     match_id integer not null,
     id smallint not null,
-    start_deltatime smallint not null,
+    start_deltatime integer not null,
     end_deltatime smallint,
     mods integer not null,
     game_mode gamemode not null,

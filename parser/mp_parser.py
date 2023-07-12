@@ -2,8 +2,9 @@ from OsuApi import OsuApi
 from time import sleep
 import psycopg2
 from datetime import datetime
+import os
 
-START_MP = 109143736
+START_MP = 109144236
 LIMIT = 5000
 MODS = {
     "NM" : 0,
@@ -36,7 +37,7 @@ MODS = {
     "3K" : 134217728, 
     "2K" : 268435456, 
     "ScoreV2" : 536870912, 
-    "Mirror" : 1073741824
+    "MR" : 1073741824
 }
 
 
@@ -61,8 +62,7 @@ def build_game_query(match_id: int, game_id: int, last_event_time: datetime, eve
 
 
 def build_score_query(match_id, game_id, score_id, score):
-    osu_score_id = score['id'] if score['id'] else 'null'
-    return f"INSERT INTO score VALUES ({match_id}, {game_id}, {score_id}, {osu_score_id}, {score['user_id']}, {score['score']}, {score['max_combo']}, {score['statistics']['count_100']}, {score['statistics']['count_300']}, {score['statistics']['count_50']}, {score['statistics']['count_geki']}, {score['statistics']['count_katu']}, {score['statistics']['count_miss']}, {score['passed']});"
+    return f"INSERT INTO score VALUES ({match_id}, {game_id}, {score_id}, {score['user_id']}, {score['score']}, {score['max_combo']}, {score['statistics']['count_100']}, {score['statistics']['count_300']}, {score['statistics']['count_50']}, {score['statistics']['count_geki']}, {score['statistics']['count_katu']}, {score['statistics']['count_miss']}, {score['passed']});"
 
 
 def build_mp_queries(mp):
