@@ -14,18 +14,21 @@ app = Celery(
 )
 app.config_from_envvar('CELERY_CONFIG_MODULE')
 
+app.conf.beat_schedule = {
+    'add-every-30-seconds': {
+        'task': 'load_new_mps',
+        'schedule': 10.0,
+        'args': ()
+    },
+}
+
 current_mp_id = max(
     db.get_max_match_id(),
     int(environ['MP_PARSER_START_ID'])
 )
 
 
-@app.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(10.0, load_new_mps.s())
-
-
-@app.task()
+@app.task(name='token')
 def token():
     return 1
 
