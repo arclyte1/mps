@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import time
 import json
+import os
 
 
 class OsuApi:
@@ -14,7 +15,6 @@ class OsuApi:
     def __init__(self, client_id: int, client_secret: str):
         self.client_id = client_id
         self.client_secret = client_secret
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         try:
             with open('osuApiToken.txt', 'r') as tokenFile:
                 self.token = tokenFile.readline().replace('\n', '')
@@ -76,3 +76,6 @@ class OsuApi:
 
     def get_mps(self, ids: list):
         return filter(lambda x: 'match' in x, list(self.get_requests(list(map(lambda x: f'/matches/{x}', ids)))))
+
+
+instance = OsuApi(os.environ['OSU_API_CLIENT_ID'], os.environ['OSU_API_CLIENT_SECRET'])

@@ -1,16 +1,64 @@
 version: "3.9"
 services:
+
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-      PGDATA: "/var/lib/postgresql/data/pgdata"
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ./init-db.sql:/docker-entrypoint-initdb.d/create_tables.sql
       - ./data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root"]
+      interval: 10s
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis
+    container_name: redis-backend
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      start_period: 10s
+
+  celery:
+    build: ./celery
+    command: celery -A tasks worker --loglevel INFO
+    environment:
+      - BROKER_URL=amqp://guest@rabbitmq//
+      - BACKEND_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://root:postgres@db:5432/root
+      - OSU_API_CLIENT_ID
+      - OSU_API_CLIENT_SECRET
+      - MP_PARSER_START_ID=109144286
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    volumes:
+      - ./celery:/app/
 
 volumes:
   db:

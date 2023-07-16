@@ -1,3 +1,4 @@
 data
+__pycache__
 parser/__pycache__
 parser/osuApiToken.txt

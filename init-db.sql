@@ -1,8 +1,8 @@
 CREATE TABLE match(
     id integer not null,
-    name varchar not null,
-    start_time timestamp not null,
-    end_time timestamp not null,
+    name varchar,
+    start_time timestamp,
+    end_time timestamp,
     primary key(id)
 );
 
@@ -77,4 +77,11 @@ CREATE TABLE score(
     passed boolean not null,
     primary key (match_id, game_id, id),
     foreign key (match_id, game_id) references game(match_id, id)
+);
+
+CREATE TABLE match_parser_queue(
+    match_id integer not null,
+    last_checked timestamp not null,
+    primary key (match_id),
+    foreign key (match_id) references match(id)
 );
