@@ -70,6 +70,9 @@ class OsuApi:
     def get_users(self, usernames: list):
         return list(self.get_requests(list(map(lambda x: f'/users/{x}/osu', usernames))))
 
+    def get_matches_list(self):
+        return self.get_request('/matches/')
+
     def get_mp(self, id: int):
         mp = self.get_request(f'/matches/{id}')
         return mp if 'match' in mp else None
@@ -78,4 +81,5 @@ class OsuApi:
         return filter(lambda x: 'match' in x, list(self.get_requests(list(map(lambda x: f'/matches/{x}', ids)))))
 
 
+API_RATE_LIMIT_PER_MINUTE = 1200
 instance = OsuApi(os.environ['OSU_API_CLIENT_ID'], os.environ['OSU_API_CLIENT_SECRET'])

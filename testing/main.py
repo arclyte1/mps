@@ -33,4 +33,14 @@ def send_msg_to_celery(args, queue, task):
 
 
 if __name__ == '__main__':
-    send_msg_to_celery([10], 'default', 'load_mp')
+    for i in range(20):
+        send_msg_to_celery([i], 'osu_api', 'load_mp')
+        
+    for i in range(5):
+        send_msg_to_celery([i], 'osu_api', 'get_users')
+        
+    for i in range(5):
+        send_msg_to_celery([i], 'osu_api', 'get_beatmaps')
+        
+    for i in range(5):
+        send_msg_to_celery([], 'osu_api', 'load_new_mps')

@@ -1,4 +1,6 @@
 data
 __pycache__
-parser/__pycache__
-parser/osuApiToken.txt
+.env
+celery/__pycache__
+celery/osuApiToken.txt
+celery/celerybeat-schedule

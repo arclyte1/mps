@@ -41,7 +41,7 @@ services:
 
   celery-worker:
     build: ./celery
-    command: celery -A tasks worker --loglevel INFO
+    command: celery -A tasks worker
     environment:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=redis://redis:6379/0
@@ -62,7 +62,7 @@ services:
   celery-beat:
     build: ./celery
     container_name: celery-beat
-    command: celery -A tasks beat --loglevel INFO
+    command: celery -A tasks beat
     environment:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=redis://redis:6379/0

@@ -1,8 +1,20 @@
 from os import environ
 from kombu import Queue
+from osu_api import API_RATE_LIMIT_PER_MINUTE as osu_api_rate_limit
+
 
 broker_url = environ['BROKER_URL']
 backend_url = environ['BACKEND_URL']
+beat_schedule = {
+    'load_new_mps_every_60_seconds': {
+        'task': 'load_new_mps',
+        'schedule': 60.0
+    },
+    'add_osu_api_tokens': {
+        'task': 'token',
+        'schedule': 60 / osu_api_rate_limit
+    }
+}
 # worker_heartbeat = 120
 # task_concurrency = 4
 # worker_prefetch_multiplier = 1
