@@ -9,14 +9,14 @@ data class Match(
     val id: Long,
 
     @JsonProperty("name")
-    val name: String,
+    val name: String?,
 
     @JsonProperty("start_time")
-    val startTime: Date,
+    val startTime: Date? = null,
 
     @JsonProperty("end_time")
-    val endTime: Date,
+    val endTime: Date? = null,
 
     @JsonProperty("games_count")
-    val gamesCount: Int,
+    val gamesCount: Int = 0,
 )

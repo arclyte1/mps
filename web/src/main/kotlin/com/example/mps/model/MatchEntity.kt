@@ -12,5 +12,16 @@ data class MatchEntity(
 
     @Id
     @Column(name = "id")
-    val id: Long
-)
+    val id: Long,
+
+    @Column(name = "name")
+    val name: String?,
+) {
+
+    fun toMatch(): Match {
+        return Match(
+            id = id,
+            name = name,
+        )
+    }
+}

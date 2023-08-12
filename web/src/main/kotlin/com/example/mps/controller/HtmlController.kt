@@ -1,5 +1,6 @@
 package com.example.mps.controller
 
+import com.example.mps.model.MatchView
 import com.example.mps.service.MatchService
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -14,7 +15,8 @@ class HtmlController(
 
     @GetMapping("/")
     fun index(model: Model): String {
-        model["title"] = service.getMatches()
+        model["title"] = "Mps"
+        model["matches"] = service.getMatches().map {MatchView.fromMatch(it)}
         return "index"
     }
 }
