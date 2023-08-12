@@ -3,7 +3,7 @@ import uuid
 import os 
 import socket
 import json
-from ..celery.tasks import get_users, get_beatmaps, load_mp, load_new_mps
+from tasks import get_users, get_beatmaps, load_mp, load_new_mps
 
 
 def send_msg_to_celery(args, queue, task, priority=5):
@@ -36,18 +36,20 @@ def send_msg_to_celery(args, queue, task, priority=5):
 
 
 if __name__ == '__main__':
-    for i in range(20):
-        load_mp(args=[i])
-        # send_msg_to_celery([i], 'osu_api', 'load_mp', priority=5)
+    for i in range(10):
+        load_mp.apply_async((109143626 + i,), priority=7)
+    # for i in range(20):
+    #     load_mp.apply_async((i,), priority=7)
+    #     # send_msg_to_celery([i], 'osu_api', 'load_mp', priority=5)
         
-    for i in range(5):
-        get_users(args=[i])
-        # send_msg_to_celery([i], 'osu_api', 'get_users', priority=7)
+    # for i in range(5):
+    #     get_users.apply_async(kwargs={'user_ids': i}, priority=5)
+    #     # send_msg_to_celery([i], 'osu_api', 'get_users', priority=7)
         
-    for i in range(5):
-        get_beatmaps(args=[i])
-        # send_msg_to_celery([i], 'osu_api', 'get_beatmaps', priority=7)
+    # for i in range(5):
+    #     get_beatmaps.apply_async(kwargs={'beatmap_ids': i}, priority=5)
+    #     # send_msg_to_celery([i], 'osu_api', 'get_beatmaps', priority=7)
         
-    for i in range(5):
-        load_new_mps()
-        # send_msg_to_celery([], 'osu_api', 'load_new_mps', priority=6)
+    # for i in range(5):
+    #     load_new_mps.apply_async(priority=6)
+    #     # send_msg_to_celery([], 'osu_api', 'load_new_mps', priority=6)

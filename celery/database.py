@@ -183,6 +183,11 @@ def upsert_mp(data):
     __connection.commit()
 
 
+def delete_match(id):
+    __cursor.execute('DELETE FROM match WHERE id=%s', (id,))
+    __connection.commit()
+
+
 def upsert_match_to_queue(match_id, last_checked):
     __cursor.execute('INSERT INTO match_parser_queue VALUES (%s, %s) ON CONFLICT (match_id) DO UPDATE SET last_checked=%s', (match_id, last_checked, last_checked))
     __connection.commit()

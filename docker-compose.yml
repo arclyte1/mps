@@ -80,6 +80,14 @@ services:
     volumes:
       - ./celery:/app/
 
+  web:
+    build: ./web
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+
 volumes:
   db:
     driver: local
