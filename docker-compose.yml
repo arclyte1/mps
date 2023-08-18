@@ -81,7 +81,10 @@ services:
       - ./celery:/app/
 
   web:
-    build: ./web
+    build:
+      context: ./web
+      cache_to:
+        - type=local,dest=data/cache
     depends_on:
       db:
         condition: service_healthy

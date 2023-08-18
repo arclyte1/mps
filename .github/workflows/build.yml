@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Build ${{ matrix.service }}
+        run: |
+          ls
+          docker buildx create --use
+          docker buildx bake ${{ matrix.service }}
+    strategy:
+      matrix:
+        service: ["web", "celery-worker", "celery-beat"]
