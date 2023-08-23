@@ -81,5 +81,5 @@ class OsuApi:
         return filter(lambda x: 'match' in x, list(self.get_requests(list(map(lambda x: f'/matches/{x}', ids)))))
 
 
-API_RATE_LIMIT_PER_MINUTE = 120
+API_RATE_LIMIT_PER_MINUTE = 300
 instance = OsuApi(os.environ['OSU_API_CLIENT_ID'], os.environ['OSU_API_CLIENT_SECRET'])

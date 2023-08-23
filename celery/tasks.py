@@ -76,10 +76,10 @@ def get_beatmaps(self, beatmap_ids):
 @app.task(bind=True, name='load_mp', queue='osu_api', max_retries=None)
 @osu_api_rate_limit()
 def load_mp(self, mp_id):
-    print("Got mp " + str(mp_id))
     try:
         mp = api.get_mp(mp_id)
-        if api.get_mp(mp_id):  # None means mp has private history
+        print("Got mp " + str(mp_id))
+        if mp:  # None means mp has private history
             if db.get_match(mp_id):
                 db.upsert_mp(mp)
                 if mp['match']['end_time']:
