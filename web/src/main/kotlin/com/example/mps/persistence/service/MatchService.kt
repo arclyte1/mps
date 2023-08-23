@@ -1,8 +1,7 @@
-package com.example.mps.service
+package com.example.mps.persistence.service
 
-import com.example.mps.model.Match
-import com.example.mps.model.MatchView
-import com.example.mps.repository.MatchRepository
+import com.example.mps.domain.model.Match
+import com.example.mps.domain.repository.MatchRepository
 import org.springframework.stereotype.Service
 
 @Service

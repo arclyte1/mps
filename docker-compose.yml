@@ -42,6 +42,7 @@ services:
   celery-worker:
     build: ./celery
     command: celery -A tasks worker
+    image: mps-celery-worker
     environment:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=redis://redis:6379/0
@@ -61,6 +62,7 @@ services:
 
   celery-beat:
     build: ./celery
+    image: mps-celery-beat
     container_name: celery-beat
     command: celery -A tasks beat
     environment:
@@ -81,7 +83,11 @@ services:
       - ./celery:/app/
 
   web:
-    build: ./web
+    build: 
+      context: ./web
+      cache_to:
+        - type=local,dest=data/cache
+    image: mps-web
     depends_on:
       db:
         condition: service_healthy

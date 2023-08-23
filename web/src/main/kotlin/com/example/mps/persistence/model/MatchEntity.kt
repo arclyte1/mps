@@ -1,5 +1,6 @@
-package com.example.mps.model
+package com.example.mps.persistence.model
 
+import com.example.mps.domain.model.Match
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id

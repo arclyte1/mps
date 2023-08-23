@@ -1,4 +1,4 @@
-package com.example.mps.model
+package com.example.mps.domain.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.*
