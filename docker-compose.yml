@@ -42,8 +42,6 @@ services:
   celery-worker:
     build: 
       context: ./celery
-      cache_to:
-        - type=local,dest=data/cache
     command: celery -A tasks worker
     image: mps-celery-worker
     environment:
@@ -66,8 +64,6 @@ services:
   celery-beat:
     build: 
       context: ./celery
-      cache_to:
-        - type=local,dest=data/cache
     image: mps-celery-beat
     container_name: celery-beat
     command: celery -A tasks beat
@@ -91,8 +87,6 @@ services:
   celery-web:
     build: 
       context: ./celery
-      cache_to:
-        - type=local,dest=data/cache
     image: mps-celery-web
     container_name: celery-web
     command: uvicorn web:app --host 0.0.0.0 --port 80

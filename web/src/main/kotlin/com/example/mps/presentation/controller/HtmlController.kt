@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
 
 
 @Controller
@@ -14,9 +15,12 @@ class HtmlController(
 ) {
 
     @GetMapping("/")
-    fun index(model: Model): String {
+    fun index(model: Model, @RequestParam(defaultValue = "0") page: Int): String {
+        val pageData = service.getMatches(page).map { MatchView.fromMatch(it) }
         model["title"] = "Mps"
-        model["matches"] = service.getMatches().map { MatchView.fromMatch(it)}
+        model["page"] = page
+        model["pageCount"] = pageData.totalPages
+        model["matches"] = pageData.content
         return "index"
     }
 }
