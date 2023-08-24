@@ -15,12 +15,16 @@ class HtmlController(
 ) {
 
     @GetMapping("/")
-    fun index(model: Model, @RequestParam(defaultValue = "0") page: Int): String {
-        val pageData = service.getMatches(page).map { MatchView.fromMatch(it) }
-        model["title"] = "Mps"
-        model["page"] = page
-        model["pageCount"] = pageData.totalPages
-        model["matches"] = pageData.content
-        return "index"
+    fun index(model: Model, @RequestParam(defaultValue = "1") page: Int): String {
+        return if (page >= 1) {
+            val pageData = service.getMatches(page - 1).map { MatchView.fromMatch(it) }
+            model["title"] = "Mps"
+            model["page"] = page
+            model["totalPages"] = pageData.totalPages
+            model["matches"] = pageData.content
+            "index"
+        } else {
+            "404"
+        }
     }
 }

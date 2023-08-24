@@ -1,11 +1,46 @@
 {{> header}}
 
-<h1>{{title}}</h1>
+<h1>Page {{page}}</h1>
+
+<button onclick="prevPage()">Prev Page</button>
+<button onclick="nextPage()">Next Page</button>
 
 {{#matches}}
     <br/>
-    <h3>{{id}}</h3>
-    <h3>{{name}}</h3>
+    <p>{{id}}</p>
+    <p>{{name}}</p>
 {{/matches}}
+
+<script type="text/javascript">
+    const PAGE = {{page}};
+    const TOTAL_PAGES = {{totalPages}};
+</script>
+
+<script type="text/javascript">
+    function nextPage() {
+        if (PAGE + 1 <= TOTAL_PAGES) {
+            updateContent({
+                "page": PAGE + 1
+            });
+        }
+    }
+
+    function prevPage() {
+        if (PAGE - 1 >= 1) {
+            updateContent({
+                "page": PAGE - 1
+            });
+        }
+    }
+
+    function updateContent(params) {
+        let page = (params.page === undefined) ? PAGE : params.page;
+
+        let url = window.location.href.split('?')[0];
+        url += `?page=${page}`;
+        console.log(`Redirecting: ${url}`);
+        window.location.replace(url);
+    }
+</script>
 
 {{> footer}}
