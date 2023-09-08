@@ -1,7 +1,8 @@
 from pprint import pprint
 from os import environ
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from typing import Callable, Any
 
 
 class __QueryBuilder:
@@ -160,39 +161,91 @@ class __QueryBuilder:
         return queries
 
 
-__connection = psycopg2.connect(environ['POSTGRES_URL'])
-__cursor = __connection.cursor()
-__query_builder = __QueryBuilder()
-
-
 def get_max_match_id():
-    __cursor.execute('select max(id) from match;')
-    max_match_table_mp_id = __cursor.fetchone()
-    return max_match_table_mp_id[0] if max_match_table_mp_id[0] else -1
+    def q(conn, cursor):
+        cursor.execute('SELECT MAX(match_id) FROM (SELECT id AS match_id FROM match UNION SELECT match_id FROM match_parser_queue) foo')
+        max_match_table_mp_id = cursor.fetchone()
+        return max_match_table_mp_id[0] if max_match_table_mp_id[0] else -1
+    
+    return db_query(q)
 
 
 def get_match(id):
-    __cursor.execute(f"select * from match where id={id};")
-    return __cursor.fetchone()
+    def q(conn, cursor):
+        cursor.execute(f'SELECT * FROM match WHERE id={id}')
+        return cursor.fetchone()
+    
+    return db_query(q)
 
 
 def upsert_mp(data):
-    queries = __query_builder.build_mp_queries(data, True)
-    for query in queries:
-        __cursor.execute(query.sql_template, query.data)
-    __connection.commit()
+    def q(conn, cursor):
+        __query_builder = __QueryBuilder()
+        queries = __query_builder.build_mp_queries(data, True)
+        for query in queries:
+            cursor.execute(query.sql_template, query.data)
+        conn.commit()
+    
+    return db_query(q)
 
 
 def delete_match(id):
-    __cursor.execute('DELETE FROM match WHERE id=%s', (id,))
-    __connection.commit()
+    def q(conn, cursor):
+        cursor.execute('DELETE FROM match WHERE id=%s', (id,))
+        conn.commit()
+    
+    return db_query(q)
 
 
-def upsert_match_to_queue(match_id, last_checked):
-    __cursor.execute('INSERT INTO match_parser_queue VALUES (%s, %s) ON CONFLICT (match_id) DO UPDATE SET last_checked=%s', (match_id, last_checked, last_checked))
-    __connection.commit()
+def upsert_match_to_queue(match_id, last_checked, status):
+    def q(conn, cursor):
+        cursor.execute(
+            'INSERT INTO match_parser_queue VALUES (%s, %s, %s) ON CONFLICT (match_id) DO UPDATE SET (last_checked, match_status) = (%s, %s)',
+            (match_id, last_checked, status, last_checked, status)
+        )
+        conn.commit()
+    
+    return db_query(q)
+
+
+def upsert_matches_to_queue(matches):
+    def q(conn, cursor):
+        for match in matches:
+            cursor.execute(
+                'INSERT INTO match_parser_queue VALUES (%(match_id)s, %(last_checked)s, %(status)s) ON CONFLICT (match_id) DO UPDATE SET (last_checked, match_status) = (%(last_checked)s, %(status)s)',
+                match
+            )
+        conn.commit()
+
+    return db_query(q)
 
 
 def delete_match_from_queue(match_id):
-    __cursor.execute('DELETE FROM match_parser_queue WHERE match_id=%s', (match_id,))
-    __connection.commit()
+    def q(conn, cursor):
+        cursor.execute('DELETE FROM match_parser_queue WHERE match_id=%s', (match_id,))
+        conn.commit()
+
+    return db_query(q)
+
+
+def get_queued_matches(limit):
+    def q(conn, cursor):
+        max_date = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+        cursor.execute('SELECT * FROM match_parser_queue WHERE last_checked < %s ORDER BY last_checked LIMIT %s', (max_date, limit))
+        return cursor.fetchall()
+    
+    return db_query(q)
+
+
+def update_last_checked_match_queue(match_id, last_checked):
+    def q(conn, cursor):
+        cursor.execute()
+
+
+def db_query(f: Callable[[Any, Any], Any]) -> Any:
+    conn = psycopg2.connect(environ['POSTGRES_URL'])
+    res = None
+    with conn.cursor() as cursor:
+        res = f(conn, cursor)
+    conn.close()
+    return res

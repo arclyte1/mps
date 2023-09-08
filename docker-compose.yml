@@ -18,15 +18,15 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  redis:
-    image: redis
-    container_name: redis-backend
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      start_period: 10s
+  # redis:
+  #   image: redis
+  #   container_name: redis-backend
+  #   ports:
+  #     - "6379:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     start_period: 10s
 
   rabbitmq:
     image: rabbitmq
@@ -46,18 +46,18 @@ services:
     image: mps-celery-worker
     environment:
       - BROKER_URL=amqp://guest@rabbitmq//
-      - BACKEND_URL=redis://redis:6379/0
+      - BACKEND_URL=amqp://guest@rabbitmq//
       - POSTGRES_URL=postgresql://root:postgres@db:5432/root
       - OSU_API_CLIENT_ID
       - OSU_API_CLIENT_SECRET
-      - MP_PARSER_START_ID=109144286
+      - MP_PARSER_START_ID
     depends_on:
       db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
     volumes:
       - ./celery:/app/
 
@@ -69,41 +69,41 @@ services:
     command: celery -A tasks beat
     environment:
       - BROKER_URL=amqp://guest@rabbitmq//
-      - BACKEND_URL=redis://redis:6379/0
+      - BACKEND_URL=amqp://guest@rabbitmq//
       - POSTGRES_URL=postgresql://root:postgres@db:5432/root
       - OSU_API_CLIENT_ID
       - OSU_API_CLIENT_SECRET
-      - MP_PARSER_START_ID=109144286
+      - MP_PARSER_START_ID
     depends_on:
       db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
     volumes:
       - ./celery:/app/
 
-  celery-web:
-    build: 
-      context: ./celery
-    image: mps-celery-web
-    container_name: celery-web
-    command: uvicorn web:app --host 0.0.0.0 --port 80
-    environment:
-      - BROKER_URL=amqp://guest@rabbitmq//
-      - BACKEND_URL=redis://redis:6379/0
-      - POSTGRES_URL=postgresql://root:postgres@db:5432/root
-      - OSU_API_CLIENT_ID
-      - OSU_API_CLIENT_SECRET
-      - MP_PARSER_START_ID=109144286
-    depends_on:
-      celery-worker:
-        condition: service_started
-    volumes:
-      - ./celery:/app/
-    ports:
-      - 8081:80
+  # celery-web:
+  #   build: 
+  #     context: ./celery
+  #   image: mps-celery-web
+  #   container_name: celery-web
+  #   command: uvicorn web:app --host 0.0.0.0 --port 80
+  #   environment:
+  #     - BROKER_URL=amqp://guest@rabbitmq//
+  #     - BACKEND_URL=amqp://guest@rabbitmq//
+  #     - POSTGRES_URL=postgresql://root:postgres@db:5432/root
+  #     - OSU_API_CLIENT_ID
+  #     - OSU_API_CLIENT_SECRET
+  #     - MP_PARSER_START_ID
+  #   depends_on:
+  #     celery-worker:
+  #       condition: service_started
+  #   volumes:
+  #     - ./celery:/app/
+  #   ports:
+  #     - 8081:80
 
   web:
     build: 

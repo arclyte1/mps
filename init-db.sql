@@ -79,9 +79,15 @@ CREATE TABLE score(
     foreign key (match_id, game_id) references game(match_id, id)
 );
 
+CREATE TYPE match_parser_queue_status AS ENUM (
+    'unchecked',
+    'ongoing',
+    'error'
+);
+
 CREATE TABLE match_parser_queue(
     match_id integer not null,
     last_checked timestamp not null,
-    primary key (match_id),
-    foreign key (match_id) references match(id)
+    match_status match_parser_queue_status not null,
+    primary key (match_id)
 );
