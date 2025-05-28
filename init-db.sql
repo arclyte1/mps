@@ -102,3 +102,26 @@ CREATE TABLE match_parser_queue(
     last_parsed_event_id bigint not null,
     primary key (match_id)
 );
+
+CREATE TABLE player(
+    id integer not null,
+    username varchar,
+    country_code varchar,
+    avatar_url varchar,
+    primary key(id)
+);
+
+CREATE TABLE beatmapset(
+    id integer not null,
+    artist varchar,
+    title varchar,
+    primary key(id)
+);
+
+CREATE TABLE beatmap(
+    id integer not null,
+    beatmapset_id integer not null,
+    version varchar,
+    primary key(id),
+    foreign key(beatmapset_id) references beatmapset(id)
+);

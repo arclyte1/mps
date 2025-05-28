@@ -1,5 +1,5 @@
 import uvicorn
-from database import get_matches, OrderBy
+from database import get_matches, OrderBy, get_players
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -74,3 +74,7 @@ async def mps(request: Request):
         args["use_regex"] = False
 
     return get_matches(**args)
+
+@app.get("/players")
+def players():
+    return get_players()
