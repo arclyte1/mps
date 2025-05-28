@@ -138,6 +138,9 @@ class __QueryBuilder:
         queries = []
         queries.append(self.build_match_query(data['match'], is_upsert))
 
+        for player in data["users"]:
+            queries.append(self.build_player_query(player["id"], player["username"], player["country_code"], player["avatar_url"]))
+
         if data['match']['start_time']:
             match_id = data['match']['id']
             event_id = max_event_id + 1
@@ -149,6 +152,9 @@ class __QueryBuilder:
                     queries.append(self.build_event_query(match_id, event_id, match_start, event, is_upsert))
                     event_id += 1
                 else:
+                    beatmap_data = event['game']['beatmap']
+                    queries.append(self.build_beatmapset_query(beatmap_data))
+                    queries.append(self.build_beatmap_query(beatmap_data))
                     score_id = 0
                     queries.append(self.build_game_query(match_id, game_id, match_start, event, is_upsert))
                     for score in event['game']['scores']:
@@ -158,6 +164,46 @@ class __QueryBuilder:
         
         return queries
 
+
+    def build_player_query(self, id, username, country_code, avatar_url):
+        query = self.Query()
+        query.data = {
+            "id": id,
+            "username": username,
+            "country_code": country_code,
+            "avatar_url": avatar_url
+        }
+        query.sql_template = "INSERT INTO player VALUES (%(id)s, %(username)s, %(country_code)s, %(avatar_url)s) " \
+        "ON CONFLICT (id) DO UPDATE SET (username, country_code, avatar_url) = (%(username)s, %(country_code)s, %(avatar_url)s)"
+        return query 
+    
+
+    def build_beatmapset_query(self, data):
+        query = self.Query()
+        query.data = {
+            "id": data["beatmapset_id"],
+            "artist": data["beatmapset"]["artist"],
+            "artist_unicode": data["beatmapset"]["artist_unicode"],
+            "title": data["beatmapset"]["title"],
+            "title_unicode": data["beatmapset"]["title_unicode"]
+        }
+        query.sql_template = "INSERT INTO beatmapset VALUES (%(id)s, %(artist)s, %(artist_unicode)s, %(title)s, %(title_unicode)s) " \
+        "ON CONFLICT (id) DO UPDATE SET (artist, artist_unicode, title, title_unicode) = (%(artist)s, %(artist_unicode)s, %(title)s, %(title_unicode)s)"
+        return query
+    
+
+    def build_beatmap_query(self, data):
+        query = self.Query()
+        query.data = {
+            "id": data["id"],
+            "beatmapset_id": data["beatmapset_id"],
+            "status": data["status"],
+            "difficulty_rating": data["difficulty_rating"],
+            "version": data["version"],
+        }
+        query.sql_template = "INSERT INTO beatmap VALUES (%(id)s, %(beatmapset_id)s, %(status)s, %(difficulty_rating)s, %(version)s) " \
+        "ON CONFLICT (id) DO UPDATE SET (beatmapset_id, status, difficulty_rating, version) = (%(beatmapset_id)s, %(status)s, %(difficulty_rating)s, %(version)s)"
+        return query
 
 def get_max_match_id():
     def q(conn, cursor):
