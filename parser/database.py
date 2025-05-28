@@ -138,6 +138,9 @@ class __QueryBuilder:
         queries = []
         queries.append(self.build_match_query(data['match'], is_upsert))
 
+        for player in data["users"]:
+            queries.append(self.build_player_query(player["id"], player["username"], player["country_code"], player["avatar_url"]))
+
         if data['match']['start_time']:
             match_id = data['match']['id']
             event_id = max_event_id + 1
@@ -158,6 +161,30 @@ class __QueryBuilder:
         
         return queries
 
+
+    def build_player_query(self, id, username, country_code, avatar_url):
+        query = self.Query()
+        query.data = {
+            "id": id,
+            "username": username,
+            "country_code": country_code,
+            "avatar_url": avatar_url
+        }
+        query.sql_template = "INSERT INTO player VALUES (%(id)s, %(username)s, %(country_code)s, %(avatar_url)s) " \
+        "ON CONFLICT (id) DO UPDATE SET (username, country_code, avatar_url) = (%(username)s, %(country_code)s, %(avatar_url)s)"
+        return query 
+
+    def build_player_query(self, id, username, country_code, avatar_url):
+        query = self.Query()
+        query.data = {
+            "id": id,
+            "username": username,
+            "country_code": country_code,
+            "avatar_url": avatar_url
+        }
+        query.sql_template = "INSERT INTO player VALUES (%(id)s, %(username)s, %(country_code)s, %(avatar_url)s) " \
+        "ON CONFLICT (id) DO UPDATE SET (username, country_code, avatar_url) = (%(username)s, %(country_code)s, %(avatar_url)s)"
+        return query     
 
 def get_max_match_id():
     def q(conn, cursor):
@@ -364,6 +391,13 @@ def get_matches(limit: int,
             'count': count["count"],
         }
 
+    return db_query(q, cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def get_players():
+    def q(conn, cursor):
+        cursor.execute("SELECT * FROM player")
+        return cursor.fetchall()
     return db_query(q, cursor_factory=psycopg2.extras.RealDictCursor)
 
 
