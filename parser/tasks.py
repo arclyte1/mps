@@ -66,28 +66,28 @@ def load_new_mps(self):
 
         # Firstly try to load new mps
         if max_tasks_to_post > 0:
-            last_new_mp_to_load = min(last_match_id, last_checked_mp + max_tasks_to_post)
-            new_mps_to_load = set(range(last_checked_mp + 1, last_new_mp_to_load + 1))
-            db.upsert_matches_to_queue(map(lambda x: {'match_id': x, 'last_checked': datetime.now(timezone.utc), 'status': 'unchecked'}, new_mps_to_load))
+            last_new_mp_to_load = min(last_match_id, last_checked_mp + int(max_tasks_to_post * 0.6)) # TODO
+            new_mps_to_load = set(map(lambda x: (x, 1), range(last_checked_mp + 1, last_new_mp_to_load + 1)))
+            db.upsert_matches_to_queue(map(lambda x: {'match_id': x[0], 'last_checked': datetime.now(timezone.utc), 'status': 'unchecked', 'last_parsed_event_id': 1}, new_mps_to_load))
             mps_to_load |= new_mps_to_load
             max_tasks_to_post -= len(new_mps_to_load)
 
         # Secondly try to load mps that was not checked due to error
         if max_tasks_to_post > 0:
-            old_mps_to_load = set(map(lambda x: x[0], db.get_queued_matches(limit=max_tasks_to_post)))
+            old_mps_to_load = set(map(lambda x: (x[0], x[3]), db.get_queued_matches(limit=max_tasks_to_post)))
             mps_to_load |= old_mps_to_load
         
         # Prevent tasks duplication
         mps_in_queue = set(map(lambda x: int(x['properties']['headers']['argsrepr'][1:-2]), filter(lambda x: x['properties']['headers']['task'] == 'load_mp', all_osu_api_tasks)))
-        mps_to_load -= mps_in_queue
+        mps_to_load = set(filter(lambda x: x[0] not in mps_in_queue, mps_to_load))
 
         print("MPS IN QUEUE: ", sorted(list(mps_in_queue)))
         print("MPS TO LOAD: ", sorted(mps_to_load))
         
 
         # Create tasks
-        for mp_id in mps_to_load:
-            load_mp.apply_async((mp_id,), priority=7)
+        for mp_id, last_event_id in mps_to_load:
+            load_mp.apply_async((mp_id, last_event_id), priority=7)
         
         print(f"Added {len(mps_to_load)} load_mp tasks")
     except Exception as e:
@@ -108,21 +108,29 @@ def get_beatmaps(self, beatmap_ids):
 
 @app.task(bind=True, name='load_mp', queue='osu_api', max_retries=None)
 @osu_api_rate_limit()
-def load_mp(self, mp_id):
+def load_mp(self, mp_id, last_event_id):
     try:
-        mp = api.get_mp(mp_id)
+        mp = api.get_mp(mp_id, after=last_event_id-1)
         if mp:  # None means mp has private history
+            events_ids = list(map(lambda x: x['id'], mp['events']))
+            if not events_ids:
+                print(mp)
+            max_event_id = max(map(lambda x: x['id'], mp['events']))
+            is_reached_end = mp['match']['end_time'] and mp['latest_event_id'] == max_event_id
             db.upsert_mp(mp)
-            if mp['match']['end_time']:
+            if is_reached_end:
                 db.delete_match_from_queue(mp_id)
                 print("Got completed mp " + str(mp_id))
             else:
-                db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "ongoing")
+                db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "ongoing", max_event_id)
                 print("Got ongoing mp " + str(mp_id))
         else:
             print("Got private mp " + str(mp_id))
-            db.delete_match(mp_id)
+            if not db.get_events(mp_id):
+                db.delete_match(mp_id)
             db.delete_match_from_queue(mp_id)
     except Exception as e:
         print(f"Exception while loading mp {mp_id}: {e}")
-        db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "error")
+        queued_match = db.get_queued_match(mp_id)
+        last_parsed_event = int(queued_match[3]) if isinstance(queued_match, tuple) and len(queued_match) >= 4 else 1
+        db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "error", last_parsed_event)

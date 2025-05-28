@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 import time
-import json
 import os
 
 
@@ -73,8 +72,8 @@ class OsuApi:
     def get_matches_list(self):
         return self.get_request('/matches/')
 
-    def get_mp(self, id: int):
-        mp = self.get_request(f'/matches/{id}')
+    def get_mp(self, id: int, after: int = 0, limit: int = 100):
+        mp = self.get_request(f'/matches/{id}?after={after}&limit={limit}')
         return mp if 'match' in mp else None
 
     def get_mps(self, ids: list):
