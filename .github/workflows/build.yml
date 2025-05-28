@@ -15,4 +15,4 @@ jobs:
           docker buildx bake ${{ matrix.service }}
     strategy:
       matrix:
-        service: ["web", "celery-worker", "celery-beat"]
+        service: ["parser-worker", "parser-celery-beat", "parser-api", "bot"]
