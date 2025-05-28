@@ -40,9 +40,9 @@ services:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=amqp://guest@rabbitmq//
       - POSTGRES_URL=postgresql://root:postgres@db:5432/root
-      - OSU_API_CLIENT_ID=8017
-      - OSU_API_CLIENT_SECRET=g1BBEgoE8ROu3gsd8Yr8X1e106qMM1858n0TxVbu
-      - MP_PARSER_START_ID=115515855
+      - OSU_API_CLIENT_ID
+      - OSU_API_CLIENT_SECRET
+      - MP_PARSER_START_ID
     depends_on:
       db:
         condition: service_healthy
@@ -61,9 +61,9 @@ services:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=amqp://guest@rabbitmq//
       - POSTGRES_URL=postgresql://root:postgres@db:5432/root
-      - OSU_API_CLIENT_ID=8017
-      - OSU_API_CLIENT_SECRET=g1BBEgoE8ROu3gsd8Yr8X1e106qMM1858n0TxVbu
-      - MP_PARSER_START_ID=115515855
+      - OSU_API_CLIENT_ID
+      - OSU_API_CLIENT_SECRET
+      - MP_PARSER_START_ID
     depends_on:
       db:
         condition: service_healthy
@@ -82,9 +82,9 @@ services:
       - BROKER_URL=amqp://guest@rabbitmq//
       - BACKEND_URL=amqp://guest@rabbitmq//
       - POSTGRES_URL=postgresql://root:postgres@db:5432/root
-      - OSU_API_CLIENT_ID=8017
-      - OSU_API_CLIENT_SECRET=g1BBEgoE8ROu3gsd8Yr8X1e106qMM1858n0TxVbu
-      - MP_PARSER_START_ID=115515855
+      - OSU_API_CLIENT_ID
+      - OSU_API_CLIENT_SECRET
+      - MP_PARSER_START_ID
     volumes:
       - ./parser:/app/
     ports:
@@ -99,7 +99,7 @@ services:
     command: python3 main.py
     environment:
       - API_HOST=http://parser-api:80/
-      - DISCORD_BOT_TOKEN=MTA2MDYzMjg0ODExOTM2NTcwMg.GtoK8M.TqVnVS1wGQ734ZERFHlERxC0_B7K0sN7JCb3DQ
+      - DISCORD_BOT_TOKEN
 
 volumes:
   db:
