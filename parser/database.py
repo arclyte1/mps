@@ -139,7 +139,7 @@ class __QueryBuilder:
         queries.append(self.build_match_query(data['match'], is_upsert))
 
         for player in data["users"]:
-            queries.append(self.build_player_query(player["id"], player["username"], player["country_code"], player["avatar_url"]))
+            queries.append(self.build_player_query(player))
 
         if data['match']['start_time']:
             match_id = data['match']['id']
@@ -165,13 +165,13 @@ class __QueryBuilder:
         return queries
 
 
-    def build_player_query(self, id, username, country_code, avatar_url):
+    def build_player_query(self, data):
         query = self.Query()
         query.data = {
-            "id": id,
-            "username": username,
-            "country_code": country_code,
-            "avatar_url": avatar_url
+            "id": data["id"],
+            "username": data["username"],
+            "country_code": data["country_code"],
+            "avatar_url": data["avatar_url"]
         }
         query.sql_template = "INSERT INTO player VALUES (%(id)s, %(username)s, %(country_code)s, %(avatar_url)s) " \
         "ON CONFLICT (id) DO UPDATE SET (username, country_code, avatar_url) = (%(username)s, %(country_code)s, %(avatar_url)s)"
@@ -412,6 +412,43 @@ def get_matches(limit: int,
 
     return db_query(q, cursor_factory=psycopg2.extras.RealDictCursor)
 
+
+def get_unique_beatmap_ids():
+    def q(conn, cursor):
+        cursor.execute('select distinct beatmap_id from game except select id from beatmap')
+        return cursor.fetchall()
+    
+    return db_query(q)
+
+
+def get_unique_player_ids():
+    def q(conn, cursor):
+        cursor.execute('select distinct user_id from event where user_id is not null except select id from player')
+        return cursor.fetchall()
+    
+    return db_query(q)
+
+
+def insert_missing_data(data):
+    def q(conn, cursor):
+        __query_builder = __QueryBuilder()
+        if "players" in data:
+            for player in data["players"]:
+                if "error" not in player:
+                    query = __query_builder.build_player_query(player)
+                    cursor.execute(query.sql_template, query.data)
+            print(f"added {len(data['players'])} players")
+        if "beatmaps_data" in data:
+            for beatmap_data in data["beatmaps_data"]:
+                if "error" not in beatmap_data:
+                    beatmapset_query = __query_builder.build_beatmapset_query(beatmap_data)
+                    cursor.execute(beatmapset_query.sql_template, beatmapset_query.data)
+                    beatmap_query = __query_builder.build_beatmap_query(beatmap_data)
+                    cursor.execute(beatmap_query.sql_template, beatmap_query.data)
+            print(f"added {len(data['beatmaps_data'])} beatmaps")
+        conn.commit()
+
+    return db_query(q)
 
 def db_query(f: Callable[[Any, Any], Any], cursor_factory = None) -> Any:
     conn = psycopg2.connect(environ['POSTGRES_URL'])
