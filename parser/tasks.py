@@ -76,14 +76,14 @@ def load_new_mps(self):
         if max_tasks_to_post > 0:
             old_mps_to_load = set(map(lambda x: (x[0], x[3]), db.get_queued_matches(limit=max_tasks_to_post)))
             mps_to_load |= old_mps_to_load
-        
+
         # Prevent tasks duplication
-        mps_in_queue = set(map(lambda x: int(x['properties']['headers']['argsrepr'][1:-2]), filter(lambda x: x['properties']['headers']['task'] == 'load_mp', all_osu_api_tasks)))
+        mps_in_queue = set(map(lambda x: eval(x['properties']['headers']['argsrepr'])[0], filter(lambda x: x['properties']['headers']['task'] == 'load_mp', all_osu_api_tasks)))
         mps_to_load = set(filter(lambda x: x[0] not in mps_in_queue, mps_to_load))
 
         print("MPS IN QUEUE: ", sorted(list(mps_in_queue)))
         print("MPS TO LOAD: ", sorted(mps_to_load))
-        
+
 
         # Create tasks
         for mp_id, last_event_id in mps_to_load:
@@ -106,16 +106,27 @@ def get_beatmaps(self, beatmap_ids):
     print("Got maps " + str(beatmap_ids))
 
 
+def __last_event_id(mp):
+    current_game_id = mp['current_game_id']
+    current_game_event = next(filter(lambda x: ('game' in x) and x['game']['id'] == current_game_id, mp['events']), None)
+    if current_game_event and not mp['match']['end_time']:
+        return current_game_event['id'] - 1
+    elif mp['events']:
+        return max(map(lambda x: x['id'], mp['events']))
+    else:
+        return None
+
+
 @app.task(bind=True, name='load_mp', queue='osu_api', max_retries=None)
 @osu_api_rate_limit()
 def load_mp(self, mp_id, last_event_id):
     try:
         mp = api.get_mp(mp_id, after=last_event_id-1)
         if mp:  # None means mp has private history
-            events_ids = list(map(lambda x: x['id'], mp['events']))
-            if not events_ids:
-                print(mp)
-            max_event_id = max(map(lambda x: x['id'], mp['events']))
+            max_event_id = __last_event_id(mp)
+            if not max_event_id:
+                return
+            mp['events'] = list(filter(lambda x: x['id'] <= max_event_id, mp['events']))
             is_reached_end = mp['match']['end_time'] and mp['latest_event_id'] == max_event_id
             db.upsert_mp(mp)
             if is_reached_end:
@@ -133,4 +144,4 @@ def load_mp(self, mp_id, last_event_id):
         print(f"Exception while loading mp {mp_id}: {e}")
         queued_match = db.get_queued_match(mp_id)
         last_parsed_event = int(queued_match[3]) if isinstance(queued_match, tuple) and len(queued_match) >= 4 else 1
-        db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "error", last_parsed_event)
+        db.upsert_match_to_queue(mp_id, datetime.now(timezone.utc), "error", last_parsed_event) 

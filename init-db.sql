@@ -51,7 +51,7 @@ CREATE TABLE game(
     match_id integer not null,
     id integer not null,
     start_deltatime integer not null,
-    end_deltatime smallint,
+    end_deltatime integer,
     mods integer not null,
     game_mode gamemode not null,
     beatmap_id integer not null,

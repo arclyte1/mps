@@ -90,16 +90,16 @@ services:
     ports:
       - 8001:80
 
-  bot:
-    build: 
-      context: ./bot
-      cache_to:
-        - type=local,dest=data/cache
-    image: mps-bot
-    command: python3 main.py
-    environment:
-      - API_HOST=http://parser-api:80/
-      - DISCORD_BOT_TOKEN
+#  bot:
+#    build: 
+#      context: ./bot
+#      cache_to:
+#        - type=local,dest=data/cache
+#    image: mps-bot
+#    command: python3 main.py
+#    environment:
+#      - API_HOST=http://parser-api:80/
+#      - DISCORD_BOT_TOKEN
 
 volumes:
   db:

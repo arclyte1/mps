@@ -56,7 +56,7 @@ class __QueryBuilder:
         query = self.Query()
         query.data = {
             'id': match['id'],
-            'name': match['name'],
+            'name': match['name'].replace("\x00", "\uFFFD"),
             'start_time': match['start_time'],
             'end_time': match['end_time']
         }
@@ -152,9 +152,10 @@ class __QueryBuilder:
                     queries.append(self.build_event_query(match_id, event_id, match_start, event, is_upsert))
                     event_id += 1
                 else:
-                    beatmap_data = event['game']['beatmap']
-                    queries.append(self.build_beatmapset_query(beatmap_data))
-                    queries.append(self.build_beatmap_query(beatmap_data))
+                    if 'beatmap' in event['game']:
+                        beatmap_data = event['game']['beatmap']
+                        queries.append(self.build_beatmapset_query(beatmap_data))
+                        queries.append(self.build_beatmap_query(beatmap_data))
                     score_id = 0
                     queries.append(self.build_game_query(match_id, game_id, match_start, event, is_upsert))
                     for score in event['game']['scores']:
@@ -182,10 +183,10 @@ class __QueryBuilder:
         query = self.Query()
         query.data = {
             "id": data["beatmapset_id"],
-            "artist": data["beatmapset"]["artist"],
-            "artist_unicode": data["beatmapset"]["artist_unicode"],
-            "title": data["beatmapset"]["title"],
-            "title_unicode": data["beatmapset"]["title_unicode"]
+            "artist": data["beatmapset"]["artist"] if data["beatmapset"] else "",
+            "artist_unicode": data["beatmapset"]["artist_unicode"] if data["beatmapset"] else "",
+            "title": data["beatmapset"]["title"] if data["beatmapset"] else "",
+            "title_unicode": data["beatmapset"]["title_unicode"] if data["beatmapset"] else ""
         }
         query.sql_template = "INSERT INTO beatmapset VALUES (%(id)s, %(artist)s, %(artist_unicode)s, %(title)s, %(title_unicode)s) " \
         "ON CONFLICT (id) DO UPDATE SET (artist, artist_unicode, title, title_unicode) = (%(artist)s, %(artist_unicode)s, %(title)s, %(title_unicode)s)"
@@ -413,18 +414,18 @@ def get_matches(limit: int,
     return db_query(q, cursor_factory=psycopg2.extras.RealDictCursor)
 
 
-def get_unique_beatmap_ids():
+def get_missing_beatmap_ids():
     def q(conn, cursor):
         cursor.execute('select distinct beatmap_id from game except select id from beatmap')
-        return cursor.fetchall()
+        return list(map(lambda x: x[0], cursor.fetchall()))
     
     return db_query(q)
 
 
-def get_unique_player_ids():
+def get_missing_player_ids():
     def q(conn, cursor):
         cursor.execute('select distinct user_id from event where user_id is not null except select id from player')
-        return cursor.fetchall()
+        return list(map(lambda x: x[0], cursor.fetchall()))
     
     return db_query(q)
 
@@ -434,21 +435,28 @@ def insert_missing_data(data):
         __query_builder = __QueryBuilder()
         if "players" in data:
             for player in data["players"]:
-                if "error" not in player:
-                    query = __query_builder.build_player_query(player)
-                    cursor.execute(query.sql_template, query.data)
+                try:
+                    if "error" not in player:
+                        query = __query_builder.build_player_query(player)
+                        cursor.execute(query.sql_template, query.data)
+                except Exception as e:
+                    print(f"Exception while adding player ({e}) {player}")
             print(f"added {len(data['players'])} players")
         if "beatmaps_data" in data:
             for beatmap_data in data["beatmaps_data"]:
-                if "error" not in beatmap_data:
-                    beatmapset_query = __query_builder.build_beatmapset_query(beatmap_data)
-                    cursor.execute(beatmapset_query.sql_template, beatmapset_query.data)
-                    beatmap_query = __query_builder.build_beatmap_query(beatmap_data)
-                    cursor.execute(beatmap_query.sql_template, beatmap_query.data)
+                try:
+                    if "error" not in beatmap_data:
+                        beatmapset_query = __query_builder.build_beatmapset_query(beatmap_data)
+                        cursor.execute(beatmapset_query.sql_template, beatmapset_query.data)
+                        beatmap_query = __query_builder.build_beatmap_query(beatmap_data)
+                        cursor.execute(beatmap_query.sql_template, beatmap_query.data)
+                except Exception as e:
+                    print(f"Exception while adding beatmap ({e}) {beatmap_data}")
             print(f"added {len(data['beatmaps_data'])} beatmaps")
         conn.commit()
 
     return db_query(q)
+
 
 def db_query(f: Callable[[Any, Any], Any], cursor_factory = None) -> Any:
     conn = psycopg2.connect(environ['POSTGRES_URL'])

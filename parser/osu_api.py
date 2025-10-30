@@ -68,9 +68,9 @@ class OsuApi:
     def get_user(self, username: str):
         return self.get_request(f'/users/{username}/osu')
 
-    def get_users(self, usernames: list):
-        return list(self.get_requests(list(map(lambda x: f'/users/{x}/osu', usernames))))
-    
+    def get_users(self, ids: list):
+        return self.get_request(f'/users', {"ids[]": ids})
+
     def get_beatmap(self, id: int):
         return self.get_request(f'/beatmaps/{id}')
     
